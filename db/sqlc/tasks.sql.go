@@ -46,3 +46,60 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	)
 	return i, err
 }
+
+const getTaskByID = `-- name: GetTaskByID :one
+SELECT id, user_id, name, description, category, priority, deadline
+FROM tasks
+WHERE user_id = $1
+`
+
+func (q *Queries) GetTaskByID(ctx context.Context, userID int32) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskByID, userID)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Description,
+		&i.Category,
+		&i.Priority,
+		&i.Deadline,
+	)
+	return i, err
+}
+
+const listTasks = `-- name: ListTasks :many
+SELECT id, user_id, name, description, category, priority, deadline
+FROM tasks
+`
+
+func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, listTasks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Description,
+			&i.Category,
+			&i.Priority,
+			&i.Deadline,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

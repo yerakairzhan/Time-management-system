@@ -6,6 +6,8 @@ import (
 	"TimeManagementSystem/handler"
 	"TimeManagementSystem/repository/postgres"
 	"TimeManagementSystem/service"
+	"log"
+	"net/http"
 )
 
 func main() {
@@ -21,6 +23,12 @@ func main() {
 
 	httpHandler := handler.NewHTTPHandler(taskService)
 
-	httpHandler.Start()
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: Initroutes.,
+	}
 
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
 }
