@@ -11,6 +11,31 @@ type TaskRepository struct {
 	q *sqlc.Queries
 }
 
+func (r *TaskRepository) Create(userId int, task sqlc.Task) (int, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *TaskRepository) GetByID(userId, taskId int) (sqlc.Task, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *TaskRepository) GetAll(userId int) ([]sqlc.Task, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *TaskRepository) Update(userId, taskId int, task sqlc.Task) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *TaskRepository) Delete(userId, taskId int) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewTaskRepository(q *sqlc.Queries) *TaskRepository {
 	return &TaskRepository{q: q}
 }

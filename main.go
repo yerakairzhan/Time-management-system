@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	"TimeManagementSystem/config"
 	db "TimeManagementSystem/db/sqlc"
 	"TimeManagementSystem/handler"
 	"TimeManagementSystem/repository/postgres"
 	"TimeManagementSystem/service"
-	"log"
-	"net/http"
 )
 
 func main() {
@@ -21,14 +22,17 @@ func main() {
 
 	taskService := service.NewTaskService(taskRepo, userRepo)
 
-	httpHandler := handler.NewHTTPHandler(taskService)
+	// Хендлер
+	httpHandler := handler.NewHandler(taskService)
 
+	// Сервер
 	srv := &http.Server{
 		Addr:    ":8080",
-		Handler: Initroutes.,
+		Handler: httpHandler.InitRoutes(), // правильно инициализируем маршруты
 	}
 
+	log.Println("🚀 Server is running on http://localhost:8080")
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		log.Fatal("Server error:", err)
 	}
 }
