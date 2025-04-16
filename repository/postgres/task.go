@@ -4,7 +4,6 @@ import (
 	sqlc "TimeManagementSystem/db/sqlc"
 	"context"
 	"database/sql"
-	"time"
 )
 
 type TaskRepository struct {
@@ -12,54 +11,53 @@ type TaskRepository struct {
 }
 
 func (r *TaskRepository) Create(userId int, task sqlc.Task) (int, error) {
-	//TODO implement me
-	panic("implement me")
+	ctx := context.Background()
+
+	arg := sqlc.CreateTaskParams{
+		UserID:      int32(userId),
+		Name:        task.Name,
+		Description: task.Description,
+		Category:    task.Category,
+		Priority:    task.Priority,
+		Deadline:    task.Deadline,
+	}
+
+	ans, err := r.q.CreateTask(ctx, arg)
+	return int(ans), err
 }
 
-func (r *TaskRepository) GetByID(userId, taskId int) (sqlc.Task, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *TaskRepository) GetTaskById(TaskID int) (sqlc.Task, error) {
+	ctx := context.Background()
+	return r.q.GetTaskByID(ctx, int32(TaskID))
 }
 
-func (r *TaskRepository) GetAll(userId int) ([]sqlc.Task, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *TaskRepository) Update(taskId int, task sqlc.Task) error {
+	ctx := context.Background()
+	arg := sqlc.UpdateTaskParams{
+		ID:          int32(taskId),
+		Name:        sql.NullString{String: task.Name, Valid: true},
+		Description: task.Description,
+		Category:    sql.NullString{String: task.Category, Valid: true},
+		Priority:    sql.NullString{String: task.Priority, Valid: true},
+		UserID:      task.UserID,
+		Deadline:    task.Deadline,
+	}
+	return r.q.UpdateTask(ctx, arg)
 }
 
-func (r *TaskRepository) Update(userId, taskId int, task sqlc.Task) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (r *TaskRepository) Delete(userId, taskId int) error {
-	//TODO implement me
-	panic("implement me")
+func (r *TaskRepository) Delete(taskId int) error {
+	return r.q.DeleteTask(context.Background(), int32(taskId))
 }
 
 func NewTaskRepository(q *sqlc.Queries) *TaskRepository {
 	return &TaskRepository{q: q}
 }
 
-func (r *TaskRepository) CreateTask(
-	ctx context.Context,
-	name, description, category, priority string,
-	deadline time.Time,
-) (sqlc.Task, error) {
-	arg := sqlc.CreateTaskParams{
-		Name:        sql.NullString{String: name, Valid: true},
-		Description: sql.NullString{String: description, Valid: true},
-		Category:    sql.NullString{String: category, Valid: true},
-		Priority:    sql.NullString{String: priority, Valid: true},
-		Deadline:    sql.NullTime{Time: deadline, Valid: true},
-	}
-
-	return r.q.CreateTask(ctx, arg)
-}
-
 func (r *TaskRepository) ListTasks(ctx context.Context) ([]sqlc.Task, error) {
 	return r.q.ListTasks(ctx)
 }
 
-func (r *TaskRepository) GetTaskByID(ctx context.Context, id int32) (sqlc.Task, error) {
-	return r.q.GetTaskByID(ctx, id)
+func (r *TaskRepository) GetTasksByUserID(id int) ([]sqlc.Task, error) {
+	ctx := context.Background()
+	return r.q.GetTasksByUserID(ctx, int32(id))
 }

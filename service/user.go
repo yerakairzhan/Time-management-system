@@ -16,3 +16,7 @@ func NewAuthService(repo repository.UserRepository) *AuthService {
 func (s *AuthService) CreateUser(user db.User) (int, error) {
 	return s.repo.Create(user)
 }
+
+func (s *AuthService) GetUserByEmail(email string) (db.User, error) {
+	return s.repo.GetUserByEmail(email)
+}

@@ -18,21 +18,21 @@ func NewTaskService(taskRepo repository.TaskRepository, userRepo repository.User
 }
 
 func (s *TaskServiceImpl) CreateTask(userId int, task sqlc.Task) (int, error) {
-	return s.taskRepo.Create(userId, task)
+	return s.taskRepo.Create((userId), task)
 }
 
-func (s *TaskServiceImpl) GetTaskByID(userId, taskId int) (sqlc.Task, error) {
-	return s.taskRepo.GetByID(userId, taskId)
+func (s *TaskServiceImpl) GetTasksByUserID(userId int) ([]sqlc.Task, error) {
+	return s.taskRepo.GetTasksByUserID(userId)
 }
 
-func (s *TaskServiceImpl) GetAllTasks(userId int) ([]sqlc.Task, error) {
-	return s.taskRepo.GetAll(userId)
+func (s *TaskServiceImpl) GetTaskById(taskID int) (sqlc.Task, error) {
+	return s.taskRepo.GetTaskById(taskID)
 }
 
-func (s *TaskServiceImpl) UpdateTask(userId, taskId int, task sqlc.Task) error {
-	return s.taskRepo.Update(userId, taskId, task)
+func (s *TaskServiceImpl) UpdateTask(taskId int, task sqlc.Task) error {
+	return s.taskRepo.Update(taskId, task)
 }
 
-func (s *TaskServiceImpl) DeleteTask(userId, taskId int) error {
-	return s.taskRepo.Delete(userId, taskId)
+func (s *TaskServiceImpl) DeleteTask(taskId int) error {
+	return s.taskRepo.Delete(taskId)
 }

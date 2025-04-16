@@ -13,19 +13,19 @@ import (
 const createTask = `-- name: CreateTask :one
 INSERT INTO tasks (user_id, name, description, category, priority, deadline)
 VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING id, user_id, name, description, category, priority, deadline
+    RETURNING user_id
 `
 
 type CreateTaskParams struct {
 	UserID      int32          `json:"user_id"`
-	Name        sql.NullString `json:"name"`
+	Name        string         `json:"name"`
 	Description sql.NullString `json:"description"`
-	Category    sql.NullString `json:"category"`
-	Priority    sql.NullString `json:"priority"`
+	Category    string         `json:"category"`
+	Priority    string         `json:"priority"`
 	Deadline    sql.NullTime   `json:"deadline"`
 }
 
-func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
+func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createTask,
 		arg.UserID,
 		arg.Name,
@@ -34,6 +34,28 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		arg.Priority,
 		arg.Deadline,
 	)
+	var user_id int32
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
+const deleteTask = `-- name: DeleteTask :exec
+delete from tasks where id = $1
+`
+
+func (q *Queries) DeleteTask(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteTask, id)
+	return err
+}
+
+const getTaskByID = `-- name: GetTaskByID :one
+SELECT id, user_id, name, description, category, priority, deadline
+FROM tasks
+WHERE id = $1
+`
+
+func (q *Queries) GetTaskByID(ctx context.Context, id int32) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskByID, id)
 	var i Task
 	err := row.Scan(
 		&i.ID,
@@ -47,25 +69,41 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	return i, err
 }
 
-const getTaskByID = `-- name: GetTaskByID :one
+const getTasksByUserID = `-- name: GetTasksByUserID :many
 SELECT id, user_id, name, description, category, priority, deadline
 FROM tasks
 WHERE user_id = $1
 `
 
-func (q *Queries) GetTaskByID(ctx context.Context, userID int32) (Task, error) {
-	row := q.db.QueryRowContext(ctx, getTaskByID, userID)
-	var i Task
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Name,
-		&i.Description,
-		&i.Category,
-		&i.Priority,
-		&i.Deadline,
-	)
-	return i, err
+func (q *Queries) GetTasksByUserID(ctx context.Context, userID int32) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getTasksByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Description,
+			&i.Category,
+			&i.Priority,
+			&i.Deadline,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listTasks = `-- name: ListTasks :many
@@ -102,4 +140,38 @@ func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTask = `-- name: UpdateTask :exec
+UPDATE tasks
+SET
+    name = COALESCE($1, name),
+    description = COALESCE($2, description),
+    category = COALESCE($3, category),
+    priority = COALESCE($4, priority),
+    deadline = COALESCE($5, deadline)
+WHERE id = $6 AND user_id = $7
+`
+
+type UpdateTaskParams struct {
+	Name        sql.NullString `json:"name"`
+	Description sql.NullString `json:"description"`
+	Category    sql.NullString `json:"category"`
+	Priority    sql.NullString `json:"priority"`
+	Deadline    sql.NullTime   `json:"deadline"`
+	ID          int32          `json:"id"`
+	UserID      int32          `json:"user_id"`
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
+	_, err := q.db.ExecContext(ctx, updateTask,
+		arg.Name,
+		arg.Description,
+		arg.Category,
+		arg.Priority,
+		arg.Deadline,
+		arg.ID,
+		arg.UserID,
+	)
+	return err
 }

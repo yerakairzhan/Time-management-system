@@ -6,20 +6,38 @@ package db
 
 import (
 	"database/sql"
+	"time"
 )
+
+type Notification struct {
+	ID        int32          `json:"id"`
+	UserID    sql.NullInt32  `json:"user_id"`
+	Title     sql.NullString `json:"title"`
+	Message   sql.NullString `json:"message"`
+	Read      sql.NullBool   `json:"read"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+}
 
 type Task struct {
 	ID          int32          `json:"id"`
 	UserID      int32          `json:"user_id"`
-	Name        sql.NullString `json:"name"`
+	Name        string         `json:"name"`
 	Description sql.NullString `json:"description"`
-	Category    sql.NullString `json:"category"`
-	Priority    sql.NullString `json:"priority"`
+	Category    string         `json:"category"`
+	Priority    string         `json:"priority"`
 	Deadline    sql.NullTime   `json:"deadline"`
 }
 
+type TaskTimeLog struct {
+	ID        int32         `json:"id"`
+	TaskID    sql.NullInt32 `json:"task_id"`
+	StartTime sql.NullTime  `json:"start_time"`
+	EndTime   sql.NullTime  `json:"end_time"`
+}
+
 type User struct {
-	ID             int32          `json:"id"`
-	Email          sql.NullString `json:"email"`
-	HashedPassword sql.NullString `json:"hashed_password"`
+	ID             int32     `json:"id"`
+	Email          string    `json:"email"`
+	HashedPassword string    `json:"hashed_password"`
+	CreatedAt      time.Time `json:"created_at"`
 }

@@ -3,19 +3,17 @@ package handler
 import (
 	db "TimeManagementSystem/db/sqlc"
 	"TimeManagementSystem/service"
-	"database/sql"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strings"
 )
 
-type signUpInput struct {
+type SignInput struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
 func (h *Handler) signUp(c *gin.Context) {
-	var input signUpInput
+	var input SignInput
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid input body")
@@ -23,8 +21,8 @@ func (h *Handler) signUp(c *gin.Context) {
 	}
 
 	var user db.User
-	user.Email = sql.NullString{String: strings.ToLower(input.Email), Valid: true}
-	user.HashedPassword = sql.NullString{String: service.GeneratePasswordHash(input.Password), Valid: true}
+	user.Email = input.Email
+	user.HashedPassword = service.GeneratePasswordHash(input.Password)
 
 	id, err := h.authService.CreateUser(user)
 	if err != nil {
@@ -38,4 +36,18 @@ func (h *Handler) signUp(c *gin.Context) {
 }
 
 func (h *Handler) logIn(c *gin.Context) {
+	var input SignInput
+
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid input body")
+		return
+	}
+
+	token, err := h.authService.GenerateToken(input.Email, input.Password)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }

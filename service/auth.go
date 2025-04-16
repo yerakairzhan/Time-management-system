@@ -9,30 +9,32 @@ import (
 )
 
 const (
-	jwtSecretKey = "your-super-secret-key"
+	jwtSecretKey = "super-secret-key"
 	tokenTTL     = 12 * time.Hour
 )
 
 type tokenClaims struct {
+	UserID int    `json:"user_id"`
+	Email  string `json:"email"`
 	jwt.RegisteredClaims
-	UserID int `json:"user_id"`
 }
 
 func (s *AuthService) GenerateToken(email, password string) (string, error) {
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return "", errors.New("пользователь не найден")
+		return "", errors.New("user not found")
 	}
 
 	// сравнение паролей
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword.String), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
-		return "", errors.New("неверный пароль")
+		return "", errors.New("wrong password")
 	}
 
 	// создаем токен
 	claims := tokenClaims{
 		UserID: int(user.ID),
+		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

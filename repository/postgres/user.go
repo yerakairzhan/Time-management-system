@@ -3,11 +3,24 @@ package postgres
 import (
 	sqlc "TimeManagementSystem/db/sqlc"
 	"context"
-	"database/sql"
+	"errors"
 )
 
 type UserRepository struct {
 	q *sqlc.Queries
+}
+
+func (r *UserRepository) GetUser(email, hashedPassword string) (sqlc.User, error) {
+	user, err := r.q.GetUserByEmail(context.Background(), email)
+	if err != nil {
+		return sqlc.User{}, err
+	}
+
+	if user.HashedPassword != hashedPassword {
+		return sqlc.User{}, errors.New("invalid password")
+	}
+
+	return user, nil
 }
 
 func (r *UserRepository) Create(user sqlc.User) (int, error) {
@@ -25,7 +38,7 @@ func (r *UserRepository) Create(user sqlc.User) (int, error) {
 func (r *UserRepository) GetUserByEmail(email string) (sqlc.User, error) {
 	ctx := context.Background()
 
-	return r.q.GetUserByEmail(ctx, sql.NullString{String: email, Valid: true})
+	return r.q.GetUserByEmail(ctx, email)
 }
 
 func NewUserRepository(q *sqlc.Queries) *UserRepository {
