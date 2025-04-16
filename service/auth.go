@@ -1,28 +1,71 @@
 package service
 
 import (
-	db "TimeManagementSystem/db/sqlc"
-	"TimeManagementSystem/repository"
+	"errors"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
+	"log"
+	"time"
 )
 
-type AuthService struct {
-	repo repository.UserRepository
+const (
+	jwtSecretKey = "your-super-secret-key"
+	tokenTTL     = 12 * time.Hour
+)
+
+type tokenClaims struct {
+	jwt.RegisteredClaims
+	UserID int `json:"user_id"`
 }
 
-func NewAuthService(repo repository.UserRepository) *AuthService {
-	return &AuthService{repo: repo}
+func (s *AuthService) GenerateToken(email, password string) (string, error) {
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return "", errors.New("пользователь не найден")
+	}
+
+	// сравнение паролей
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword.String), []byte(password))
+	if err != nil {
+		return "", errors.New("неверный пароль")
+	}
+
+	// создаем токен
+	claims := tokenClaims{
+		UserID: int(user.ID),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(jwtSecretKey))
 }
 
-func (s *AuthService) CreateUser(user db.User) (int, error) {
-	return s.repo.Create(user)
+func (s *AuthService) ParseToken(tokenString string) (int, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(jwtSecretKey), nil
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	claims, ok := token.Claims.(*tokenClaims)
+	if !ok || !token.Valid {
+		return 0, errors.New("invalid token")
+	}
+
+	return claims.UserID, nil
 }
 
-func (s *AuthService) GenerateToken(username, password string) (string, error) {
-	// логика генерации токена
-	return "example-token", nil
-}
+func GeneratePasswordHash(password string) string {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Ошибка хеширования пароля:", err)
+		return ""
+	}
 
-func (s *AuthService) ParseToken(token string) (int, error) {
-	// логика парсинга токена
-	return 1, nil
+	return string(hash)
 }

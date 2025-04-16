@@ -11,25 +11,25 @@ type UserRepository struct {
 }
 
 func (r *UserRepository) Create(user sqlc.User) (int, error) {
-	//TODO implement me
-	panic("implement me")
+	ctx := context.Background()
+
+	arg := sqlc.CreateUserParams{
+		Email:          user.Email,
+		HashedPassword: user.HashedPassword,
+	}
+
+	id, err := r.q.CreateUser(ctx, arg)
+	return int(id), err
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (sqlc.User, error) {
-	//TODO implement me
-	panic("implement me")
+	ctx := context.Background()
+
+	return r.q.GetUserByEmail(ctx, sql.NullString{String: email, Valid: true})
 }
 
 func NewUserRepository(q *sqlc.Queries) *UserRepository {
 	return &UserRepository{q: q}
-}
-
-func (r *UserRepository) CreateUser(ctx context.Context, mail string, hashedPassword string) (sqlc.User, error) {
-	arg := sqlc.CreateUserParams{
-		Email:          sql.NullString{String: mail, Valid: true},
-		HashedPassword: sql.NullString{String: hashedPassword, Valid: true},
-	}
-	return r.q.CreateUser(ctx, arg)
 }
 
 //func (r *UserRepository) GetUserByEmail(ctx context.Context, mail string) (sqlc.User, error) {

@@ -6,15 +6,22 @@ import (
 )
 
 type Handler struct {
-	service service.TaskService
+	taskService service.TaskService
+	authService service.Authorization
 }
 
-func NewHandler(service service.TaskService) *Handler {
-	return &Handler{service: service}
+func NewHandler(taskService service.TaskService, authService service.Authorization) *Handler {
+	return &Handler{
+		taskService: taskService,
+		authService: authService,
+	}
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+
 	auth := router.Group("/auth")
 	{
 		auth.POST("/sign-up", h.signUp)

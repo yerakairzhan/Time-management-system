@@ -20,10 +20,10 @@ func main() {
 	userRepo := postgres.NewUserRepository(queries)
 	taskRepo := postgres.NewTaskRepository(queries)
 
+	authService := service.NewAuthService(userRepo)
 	taskService := service.NewTaskService(taskRepo, userRepo)
 
-	// Хендлер
-	httpHandler := handler.NewHandler(taskService)
+	httpHandler := handler.NewHandler(taskService, authService)
 
 	// Сервер
 	srv := &http.Server{

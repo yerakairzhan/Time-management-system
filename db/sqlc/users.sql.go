@@ -13,7 +13,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, hashed_password)
 VALUES ($1, $2)
-    RETURNING id, email, hashed_password
+    RETURNING id
 `
 
 type CreateUserParams struct {
@@ -21,11 +21,11 @@ type CreateUserParams struct {
 	HashedPassword sql.NullString `json:"hashed_password"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.HashedPassword)
-	var i User
-	err := row.Scan(&i.ID, &i.Email, &i.HashedPassword)
-	return i, err
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
