@@ -15,7 +15,7 @@ type TaskInput struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 	Category    string `json:"category"`
-	Priority    string `json:"priority"` // или string, если low/medium/high
+	Priority    string `json:"priority"`
 	Deadline    string `json:"deadline"`
 }
 

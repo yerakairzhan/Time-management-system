@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
@@ -13,7 +14,12 @@ import (
 
 func main() {
 	dbConn := config.DatabaseConnection()
-	defer dbConn.Close()
+	defer func(dbConn *sql.DB) {
+		err := dbConn.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(dbConn)
 
 	queries := db.New(dbConn)
 
@@ -25,13 +31,12 @@ func main() {
 
 	httpHandler := handler.NewHandler(taskService, authService)
 
-	// Сервер
 	srv := &http.Server{
 		Addr:    ":8080",
-		Handler: httpHandler.InitRoutes(), // правильно инициализируем маршруты
+		Handler: httpHandler.InitRoutes(),
 	}
 
-	log.Println("🚀 Server is running on http://localhost:8080")
+	log.Println("🚀 Server is running on http://localhost" + srv.Addr)
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal("Server error:", err)
 	}

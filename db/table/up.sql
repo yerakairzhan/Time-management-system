@@ -19,7 +19,8 @@ CREATE TABLE task_time_logs (
                                 id SERIAL PRIMARY KEY,
                                 task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
                                 start_time TIMESTAMP,
-                                end_time TIMESTAMP
+                                end_time TIMESTAMP,
+                                created_at TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE notifications (

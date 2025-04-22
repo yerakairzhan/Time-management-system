@@ -33,6 +33,7 @@ type TaskTimeLog struct {
 	TaskID    sql.NullInt32 `json:"task_id"`
 	StartTime sql.NullTime  `json:"start_time"`
 	EndTime   sql.NullTime  `json:"end_time"`
+	CreatedAt sql.NullTime  `json:"created_at"`
 }
 
 type User struct {

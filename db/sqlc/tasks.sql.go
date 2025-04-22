@@ -48,6 +48,25 @@ func (q *Queries) DeleteTask(ctx context.Context, id int32) error {
 	return err
 }
 
+const getActiveTimer = `-- name: GetActiveTimer :one
+SELECT id, task_id, start_time, end_time, created_at FROM task_time_logs
+WHERE task_id = $1 AND end_time IS NULL
+    LIMIT 1
+`
+
+func (q *Queries) GetActiveTimer(ctx context.Context, taskID sql.NullInt32) (TaskTimeLog, error) {
+	row := q.db.QueryRowContext(ctx, getActiveTimer, taskID)
+	var i TaskTimeLog
+	err := row.Scan(
+		&i.ID,
+		&i.TaskID,
+		&i.StartTime,
+		&i.EndTime,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getTaskByID = `-- name: GetTaskByID :one
 SELECT id, user_id, name, description, category, priority, deadline
 FROM tasks
@@ -69,10 +88,46 @@ func (q *Queries) GetTaskByID(ctx context.Context, id int32) (Task, error) {
 	return i, err
 }
 
+const getTaskTimeLogs = `-- name: GetTaskTimeLogs :many
+SELECT id, task_id, start_time, end_time, created_at FROM task_time_logs
+WHERE task_id = $1
+ORDER BY start_time DESC
+`
+
+func (q *Queries) GetTaskTimeLogs(ctx context.Context, taskID sql.NullInt32) ([]TaskTimeLog, error) {
+	rows, err := q.db.QueryContext(ctx, getTaskTimeLogs, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TaskTimeLog
+	for rows.Next() {
+		var i TaskTimeLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.TaskID,
+			&i.StartTime,
+			&i.EndTime,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTasksByUserID = `-- name: GetTasksByUserID :many
 SELECT id, user_id, name, description, category, priority, deadline
 FROM tasks
 WHERE user_id = $1
+ORDER BY priority DESC
 `
 
 func (q *Queries) GetTasksByUserID(ctx context.Context, userID int32) ([]Task, error) {
@@ -93,6 +148,38 @@ func (q *Queries) GetTasksByUserID(ctx context.Context, userID int32) ([]Task, e
 			&i.Priority,
 			&i.Deadline,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTimeSpent = `-- name: GetTimeSpent :many
+select start_time , end_time from task_time_logs where task_id = $1
+`
+
+type GetTimeSpentRow struct {
+	StartTime sql.NullTime `json:"start_time"`
+	EndTime   sql.NullTime `json:"end_time"`
+}
+
+func (q *Queries) GetTimeSpent(ctx context.Context, taskID sql.NullInt32) ([]GetTimeSpentRow, error) {
+	rows, err := q.db.QueryContext(ctx, getTimeSpent, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTimeSpentRow
+	for rows.Next() {
+		var i GetTimeSpentRow
+		if err := rows.Scan(&i.StartTime, &i.EndTime); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -140,6 +227,31 @@ func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const startTaskTimer = `-- name: StartTaskTimer :exec
+
+INSERT INTO task_time_logs (task_id, start_time)
+VALUES ($1, NOW())
+    RETURNING id, task_id, start_time, end_time, created_at
+`
+
+// -- TIMER AHEAD
+func (q *Queries) StartTaskTimer(ctx context.Context, taskID sql.NullInt32) error {
+	_, err := q.db.ExecContext(ctx, startTaskTimer, taskID)
+	return err
+}
+
+const stopTaskTimer = `-- name: StopTaskTimer :exec
+UPDATE task_time_logs
+SET end_time = NOW()
+WHERE task_id = $1 AND end_time IS NULL
+    RETURNING id, task_id, start_time, end_time, created_at
+`
+
+func (q *Queries) StopTaskTimer(ctx context.Context, taskID sql.NullInt32) error {
+	_, err := q.db.ExecContext(ctx, stopTaskTimer, taskID)
+	return err
 }
 
 const updateTask = `-- name: UpdateTask :exec

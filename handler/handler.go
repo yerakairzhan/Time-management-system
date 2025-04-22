@@ -36,10 +36,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		api.PUT("/tasks/:id", h.updateTask)    // Update a specific task by ID
 		api.DELETE("/tasks/:id", h.deleteTask) // Delete a specific task by ID
 
-		api.POST("/tasks/:id/timer/start", h.startTaskTimer)     // Start timer for a task
-		api.POST("/tasks/:id/timer/stop", h.stopTaskTimer)       // Stop timer for a task
-		api.GET("/tasks/:id/time", h.getTaskTime)                // Get the time spent on a task
-		api.GET("/tasks/:id/time/history", h.getTaskTimeHistory) // Get time history for a task
+		api.POST("/tasks/:id/timer/start", h.startTaskTimer) // Start timer for a task
+		api.POST("/tasks/:id/timer/stop", h.stopTaskTimer)   // Stop timer for a task
+		api.GET("/tasks/:id/time", h.getTaskTime)            // Get the time spent on a task
 
 		api.POST("/notifications", h.createNotification)       // Create a new notification
 		api.GET("/notifications", h.getNotifications)          // Get all notifications

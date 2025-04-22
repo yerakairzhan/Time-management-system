@@ -2,6 +2,7 @@ package service
 
 import (
 	db "TimeManagementSystem/db/sqlc"
+	"time"
 )
 
 type Authorization interface {
@@ -17,4 +18,7 @@ type TaskService interface {
 	GetTaskById(id int) (db.Task, error)
 	UpdateTask(taskId int, task db.Task) error
 	DeleteTask(taskId int) error
+	StartTask(taskId int) error
+	StopTask(taskId int) error
+	GetTimeSpent(taskId int) ([]time.Duration, error)
 }

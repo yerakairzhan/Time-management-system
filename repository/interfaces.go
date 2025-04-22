@@ -10,6 +10,10 @@ type TaskRepository interface {
 	GetTaskById(id int) (sqlc.Task, error)
 	Update(taskId int, task sqlc.Task) error
 	Delete(taskId int) error
+	StartTimer(taskId int) error
+	StopTimer(taskId int) error
+	GetActiveTimer(userId int) (sqlc.TaskTimeLog, error)
+	GetTimeSpent(taskId int) ([]sqlc.GetTimeSpentRow, error)
 }
 
 type Authorization interface {

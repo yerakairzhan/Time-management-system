@@ -10,7 +10,8 @@ FROM tasks;
 -- name: GetTasksByUserID :many
 SELECT *
 FROM tasks
-WHERE user_id = $1;
+WHERE user_id = $1
+ORDER BY priority DESC;
 
 -- name: GetTaskByID :one
 SELECT id, user_id, name, description, category, priority, deadline
@@ -29,3 +30,29 @@ WHERE id = sqlc.arg('id') AND user_id = sqlc.arg('user_id');
 
 -- name: DeleteTask :exec
 delete from tasks where id = $1;
+
+---- TIMER AHEAD
+
+-- name: StartTaskTimer :exec
+INSERT INTO task_time_logs (task_id, start_time)
+VALUES ($1, NOW())
+    RETURNING *;
+
+-- name: StopTaskTimer :exec
+UPDATE task_time_logs
+SET end_time = NOW()
+WHERE task_id = $1 AND end_time IS NULL
+    RETURNING *;
+
+-- name: GetActiveTimer :one
+SELECT * FROM task_time_logs
+WHERE task_id = $1 AND end_time IS NULL
+    LIMIT 1;
+
+-- name: GetTaskTimeLogs :many
+SELECT * FROM task_time_logs
+WHERE task_id = $1
+ORDER BY start_time DESC;
+
+-- name: GetTimeSpent :many
+select start_time , end_time from task_time_logs where task_id = $1;

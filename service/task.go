@@ -3,6 +3,8 @@ package service
 import (
 	sqlc "TimeManagementSystem/db/sqlc"
 	"TimeManagementSystem/repository"
+	"fmt"
+	"time"
 )
 
 type TaskServiceImpl struct {
@@ -35,4 +37,62 @@ func (s *TaskServiceImpl) UpdateTask(taskId int, task sqlc.Task) error {
 
 func (s *TaskServiceImpl) DeleteTask(taskId int) error {
 	return s.taskRepo.Delete(taskId)
+}
+
+func (s *TaskServiceImpl) StartTask(taskId int) error {
+	activeTimer, err := s.taskRepo.GetActiveTimer(taskId)
+	if err != nil {
+		return fmt.Errorf("error checking active timer: %w", err)
+	}
+
+	if activeTimer.ID != 0 {
+		return fmt.Errorf("task timer is already running")
+	}
+
+	err = s.taskRepo.StartTimer(taskId)
+	if err != nil {
+		return fmt.Errorf("error starting task timer: %w", err)
+	}
+
+	return nil
+}
+
+func (s *TaskServiceImpl) StopTask(taskId int) error {
+	activeTimer, err := s.taskRepo.GetActiveTimer(taskId)
+	if err != nil {
+		return fmt.Errorf("error checking active timer: %w", err)
+	}
+
+	if activeTimer.ID == 0 {
+		return fmt.Errorf("no active timer found for this task")
+	}
+
+	err = s.taskRepo.StopTimer(taskId)
+	if err != nil {
+		return fmt.Errorf("error stopping task timer: %w", err)
+	}
+
+	return nil
+}
+
+func (s *TaskServiceImpl) GetTimeSpent(taskId int) ([]time.Duration, error) {
+	timeLogs, err := s.taskRepo.GetTimeSpent(taskId)
+	if err != nil {
+		return nil, err
+	}
+
+	var durations []time.Duration
+	for _, log := range timeLogs {
+		if !log.StartTime.Valid || !log.EndTime.Valid {
+			continue
+		}
+		duration := log.EndTime.Time.Sub(log.StartTime.Time)
+		durations = append(durations, duration)
+	}
+
+	if len(durations) == 0 {
+		return nil, fmt.Errorf("no valid time logs found")
+	}
+
+	return durations, nil
 }

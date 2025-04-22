@@ -4,6 +4,7 @@ import (
 	sqlc "TimeManagementSystem/db/sqlc"
 	"context"
 	"database/sql"
+	"errors"
 )
 
 type TaskRepository struct {
@@ -60,4 +61,29 @@ func (r *TaskRepository) ListTasks(ctx context.Context) ([]sqlc.Task, error) {
 func (r *TaskRepository) GetTasksByUserID(id int) ([]sqlc.Task, error) {
 	ctx := context.Background()
 	return r.q.GetTasksByUserID(ctx, int32(id))
+}
+
+func (r *TaskRepository) StartTimer(id int) error {
+	ctx := context.Background()
+	return r.q.StartTaskTimer(ctx, sql.NullInt32{Int32: int32(id), Valid: true})
+}
+
+func (r *TaskRepository) StopTimer(id int) error {
+	ctx := context.Background()
+	return r.q.StopTaskTimer(ctx, sql.NullInt32{Int32: int32(id), Valid: true})
+}
+
+func (r *TaskRepository) GetActiveTimer(id int) (sqlc.TaskTimeLog, error) {
+	ctx := context.Background()
+	timer, err := r.q.GetActiveTimer(ctx, sql.NullInt32{Int32: int32(id), Valid: true})
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return sqlc.TaskTimeLog{}, nil
+	}
+	return timer, err
+}
+
+func (r *TaskRepository) GetTimeSpent(id int) ([]sqlc.GetTimeSpentRow, error) {
+	ctx := context.Background()
+	return r.q.GetTimeSpent(ctx, sql.NullInt32{Int32: int32(id), Valid: true})
 }
