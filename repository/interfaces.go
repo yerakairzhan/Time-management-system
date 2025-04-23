@@ -26,3 +26,7 @@ type UserRepository interface {
 	Create(user sqlc.User) (int, error)
 	GetUserByEmail(email string) (sqlc.User, error)
 }
+
+type NotificationRepository interface {
+	Create(n sqlc.Notification) (int, error)
+}

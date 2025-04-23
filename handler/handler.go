@@ -6,14 +6,16 @@ import (
 )
 
 type Handler struct {
-	taskService service.TaskService
-	authService service.Authorization
+	taskService         service.TaskService
+	authService         service.Authorization
+	notificationService service.NotificationService
 }
 
-func NewHandler(taskService service.TaskService, authService service.Authorization) *Handler {
+func NewHandler(taskService service.TaskService, authService service.Authorization, notificationService service.NotificationService) *Handler {
 	return &Handler{
-		taskService: taskService,
-		authService: authService,
+		taskService:         taskService,
+		authService:         authService,
+		notificationService: notificationService,
 	}
 }
 

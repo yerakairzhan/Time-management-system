@@ -22,3 +22,7 @@ type TaskService interface {
 	StopTask(taskId int) error
 	GetTimeSpent(taskId int) ([]time.Duration, error)
 }
+
+type NotificationService interface {
+	CreateNotification(notification db.Notification) (int, error)
+}

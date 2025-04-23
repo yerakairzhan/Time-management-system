@@ -25,11 +25,13 @@ func main() {
 
 	userRepo := postgres.NewUserRepository(queries)
 	taskRepo := postgres.NewTaskRepository(queries)
+	notificationRepo := postgres.NewNotificationRepository(queries)
 
 	authService := service.NewAuthService(userRepo)
 	taskService := service.NewTaskService(taskRepo, userRepo)
+	notificationService := service.NewNotificationService(notificationRepo)
 
-	httpHandler := handler.NewHandler(taskService, authService)
+	httpHandler := handler.NewHandler(taskService, authService, notificationService)
 
 	srv := &http.Server{
 		Addr:    ":8080",
