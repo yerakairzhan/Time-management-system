@@ -29,4 +29,8 @@ type UserRepository interface {
 
 type NotificationRepository interface {
 	Create(n sqlc.Notification) (int, error)
+	GetNotificationsByUserID(userId int) ([]sqlc.Notification, error)
+	Update(n sqlc.Notification) error
+	Delete(id int) error
+	GetNotificationById(id int) (sqlc.Notification, error)
 }

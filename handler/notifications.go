@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type NotificationInput struct {
@@ -44,10 +45,92 @@ func (h *Handler) createNotification(c *gin.Context) {
 }
 
 func (h *Handler) getNotifications(c *gin.Context) {
+	userId, err := h.getUserIdFromContext(c)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	notifications, err := h.notificationService.GetNotificationsByUserID(userId)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, notifications)
 }
 
 func (h *Handler) updateNotification(c *gin.Context) {
+	userId, err := h.getUserIdFromContext(c)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	notificationId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid notification id")
+		return
+	}
+
+	notification, err := h.notificationService.GetById(notificationId)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if notification.UserID.Int32 != int32(userId) {
+		newErrorResponse(c, http.StatusForbidden, "access denied")
+		return
+	}
+
+	var input NotificationInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	notification.Title = sql.NullString{String: input.Title, Valid: true}
+	notification.Message = sql.NullString{String: input.Message, Valid: true}
+
+	err = h.notificationService.UpdateNotification(notification)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Notification updated"})
 }
 
 func (h *Handler) deleteNotification(c *gin.Context) {
+	userId, err := h.getUserIdFromContext(c)
+	if err != nil {
+		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	notificationId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid notification id")
+		return
+	}
+
+	notification, err := h.notificationService.GetById(notificationId)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if notification.UserID.Int32 != int32(userId) {
+		newErrorResponse(c, http.StatusForbidden, "access denied")
+		return
+	}
+
+	err = h.notificationService.DeleteNotification(notificationId)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Notification deleted"})
 }

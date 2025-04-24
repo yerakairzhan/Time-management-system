@@ -28,3 +28,79 @@ func (q *Queries) CreateNotification(ctx context.Context, arg CreateNotification
 	err := row.Scan(&user_id)
 	return user_id, err
 }
+
+const deleteNotification = `-- name: DeleteNotification :exec
+delete from notifications where id = $1
+`
+
+func (q *Queries) DeleteNotification(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteNotification, id)
+	return err
+}
+
+const getNotificationById = `-- name: GetNotificationById :one
+select id, user_id, title, message, read, created_at from notifications where id = $1
+`
+
+func (q *Queries) GetNotificationById(ctx context.Context, id int32) (Notification, error) {
+	row := q.db.QueryRowContext(ctx, getNotificationById, id)
+	var i Notification
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Message,
+		&i.Read,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getNotificationByUserId = `-- name: GetNotificationByUserId :many
+select id, user_id, title, message, read, created_at from notifications where user_id = $1
+`
+
+func (q *Queries) GetNotificationByUserId(ctx context.Context, userID sql.NullInt32) ([]Notification, error) {
+	rows, err := q.db.QueryContext(ctx, getNotificationByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Notification
+	for rows.Next() {
+		var i Notification
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.Message,
+			&i.Read,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateNotification = `-- name: UpdateNotification :exec
+update notifications set title = $1, message = $2 where id = $3
+`
+
+type UpdateNotificationParams struct {
+	Title   sql.NullString `json:"title"`
+	Message sql.NullString `json:"message"`
+	ID      int32          `json:"id"`
+}
+
+func (q *Queries) UpdateNotification(ctx context.Context, arg UpdateNotificationParams) error {
+	_, err := q.db.ExecContext(ctx, updateNotification, arg.Title, arg.Message, arg.ID)
+	return err
+}

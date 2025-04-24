@@ -25,4 +25,8 @@ type TaskService interface {
 
 type NotificationService interface {
 	CreateNotification(notification db.Notification) (int, error)
+	GetNotificationsByUserID(userId int) ([]db.Notification, error)
+	UpdateNotification(notification db.Notification) error
+	DeleteNotification(notificationId int) error
+	GetById(id int) (db.Notification, error)
 }
