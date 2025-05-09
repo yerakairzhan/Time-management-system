@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source=service.go -destination=mocks/mock.go -package=mocks
+
 type Authorization interface {
 	CreateUser(user db.User) (int, error)
 	GenerateToken(email, password string) (string, error)
@@ -29,4 +31,10 @@ type NotificationService interface {
 	UpdateNotification(notification db.Notification) error
 	DeleteNotification(notificationId int) error
 	GetById(id int) (db.Notification, error)
+}
+
+type Service struct {
+	Authorization
+	TaskService
+	NotificationService
 }

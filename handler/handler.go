@@ -46,11 +46,6 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		api.GET("/notifications", h.getNotifications)          // Get all notifications
 		api.PUT("/notifications/:id", h.updateNotification)    // Update a specific notification
 		api.DELETE("/notifications/:id", h.deleteNotification) // Delete a specific notification
-
-		api.GET("/reports/time-spent", h.getTimeSpentReport)                          // Get a report on time spent on tasks
-		api.GET("/reports/task-completion", h.getTaskCompletionReport)                // Get a report on task completion rates
-		api.GET("/reports/completion-on-time", h.getCompletionOnTimeReport)           // Get a report on tasks completed on time
-		api.GET("/reports/average-completion-time", h.getAverageCompletionTimeReport) // Get a report on average task completion time
 	}
 
 	return router
