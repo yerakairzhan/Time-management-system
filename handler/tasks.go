@@ -31,7 +31,7 @@ func (h *Handler) createTask(c *gin.Context) {
 	var input TaskInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "некорректные данные задачи"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -43,7 +43,7 @@ func (h *Handler) createTask(c *gin.Context) {
 
 	deadline, err := time.Parse(time.RFC3339, input.Deadline)
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "неверный формат дедлайна (ожидается RFC3339)")
+		newErrorResponse(c, http.StatusBadRequest, "invalid deadline format")
 		return
 	}
 
@@ -155,7 +155,7 @@ func (h *Handler) updateTask(c *gin.Context) {
 	if input.Deadline != nil {
 		parsedDeadline, err := time.Parse(time.RFC3339, *input.Deadline)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deadline format"})
+			c.JSON(http.StatusBadRequest, gin.H{"message": "invalid deadline format"})
 			return
 		}
 		task.Deadline = sql.NullTime{Time: parsedDeadline, Valid: true}
